@@ -1,3 +1,9 @@
+-build 04062012
+	[*]Bug "Parent Directory" fixed
+	[*]Menu only in post
+	[*]Completed recursive copy
+	[*]Fixed create dir and create file
+
 -build 30052012
 	[*]Mejoras menores en javascript
 	[*]Mas lineas agregadas a $Lang

