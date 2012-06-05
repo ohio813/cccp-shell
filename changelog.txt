@@ -1,3 +1,6 @@
+-build 05062012
+	[*]Bug "Edit file" fixed
+
 -build 04062012
 	[*]Bug "Parent Directory" fixed
 	[*]Menu only in post
