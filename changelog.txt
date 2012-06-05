@@ -1,5 +1,6 @@
 -build 05062012
 	[*]Bug "Edit file" fixed
+	[*]magic_quotes_gpc fix
 
 -build 04062012
 	[*]Bug "Parent Directory" fixed

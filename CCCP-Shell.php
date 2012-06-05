@@ -33,9 +33,28 @@ if (function_exists('ini_set')) {
 
 error_reporting(7);
 ini_set('memory_limit', '64M'); //for online zip usage
+@set_magic_quotes_runtime(0);
 @set_time_limit(0);
 @ini_set('max_execution_time', 0);
 //@ini_set('output_buffering', 0);
+
+function s_array(&$array) {
+	if (is_array($array)) {
+		foreach ($array as $k => $v) {
+			$array[$k] = s_array($v);
+		}
+	} else if (is_string($array)) {
+		$array = stripslashes($array);
+	}
+	return $array;
+}
+
+foreach($_POST as $key => $value) {
+	if (get_magic_quotes_gpc()) {
+		$value = s_array($value);
+	}
+	$key = $value;
+}
 
 # System variables
 $Config['Menu'] = 'menu';
@@ -1216,7 +1235,6 @@ if ($_POST[$Config['Menu']] === 'file') {
 					</form>';
 		}
 	} else {
-		var_dump($_POST);
         # Acciones
         // Obtenemos el directorio en el que estamos
         $current_dir = @$_POST['dir'];
